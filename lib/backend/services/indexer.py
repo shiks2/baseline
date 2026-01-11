@@ -50,7 +50,9 @@ class AssetWatcher(FileSystemEventHandler):
         # Archives
         '.zip', '.rar', '.7z', '.tar', '.gz',
         # Code
-        '.py', '.js', '.html', '.css', '.json', '.xml', '.yaml', '.yml'
+        '.py', '.js', '.html', '.css', '.json', '.xml', '.yaml', '.yml',
+        # CAD Files
+        '.dwg', '.dxf'
     }
     
     def __init__(self):
@@ -61,6 +63,7 @@ class AssetWatcher(FileSystemEventHandler):
         self.observer = None
         self.watched_paths: Set[str] = set()
         self.is_running = False
+        self.library_root_map: Dict[str, str] = {}  # Maps file paths to their library root
         
     def start_watching(self, libraries: Optional[List[str]] = None) -> bool:
         """
@@ -141,6 +144,34 @@ class AssetWatcher(FileSystemEventHandler):
         if not event.is_directory:
             self._process_file_event(event, "moved")
     
+    def _get_folder_metadata(self, file_path: str, library_root: str) -> tuple[str, list[str]]:
+        """
+        Get folder-based metadata using smart folder parsing.
+        
+        Args:
+            file_path: Full path to the file
+            library_root: Root path of the library being watched
+            
+        Returns:
+            Tuple of (category, tags) based on folder structure
+        """
+        try:
+            # Calculate relative path from the watched library root
+            rel_path = os.path.relpath(file_path, library_root)
+            parts = os.path.dirname(rel_path).split(os.sep)
+            parts = [p for p in parts if p and p != '.']
+            
+            if not parts:
+                return "Uncategorized", []
+            
+            # First folder becomes category, subsequent folders become tags
+            category = parts[0]
+            tags = parts[1:]
+            return category, tags
+            
+        except Exception:
+            return "Uncategorized", []
+    
     def _process_file_event(self, event, event_type: str):
         """Process a file system event."""
         try:
@@ -155,19 +186,34 @@ class AssetWatcher(FileSystemEventHandler):
             if not file_info:
                 return
             
+            # Find the library root for this file
+            library_root = None
+            for watched_path in self.watched_paths:
+                if file_path.startswith(watched_path):
+                    library_root = watched_path
+                    break
+            
+            if not library_root:
+                print(f"Could not determine library root for: {file_path}")
+                return
+            
+            # Get smart folder metadata
+            category, tags = self._get_folder_metadata(file_path, library_root)
+            
             # Add or update asset in database
             existing_asset = self.db.get_asset_by_path(file_path)
             
             if event_type == "created" or (event_type == "moved" and not existing_asset):
-                # Add new asset
+                # Add new asset with smart folder metadata
                 asset_id = self.db.add_asset(
                     file_path=file_path,
                     name=file_info['name'],
-                    category=self._categorize_file(file_path),
+                    category=category,
+                    tags=tags,
                     file_size=file_info['size']
                 )
                 if asset_id:
-                    print(f"Added new asset: {file_info['name']} (ID: {asset_id})")
+                    print(f"Added new asset: {file_info['name']} (ID: {asset_id}, Category: {category}, Tags: {tags})")
             
             elif event_type == "modified" and existing_asset:
                 # Update existing asset
@@ -226,6 +272,8 @@ class AssetWatcher(FileSystemEventHandler):
                 return 'Archive'
             elif extension in {'.py', '.js', '.html', '.css', '.json', '.xml', '.yaml', '.yml'}:
                 return 'Code'
+            elif extension in {'.dwg', '.dxf'}:
+                return 'CAD'
             else:
                 return 'Other'
                 
@@ -259,17 +307,23 @@ class AssetWatcher(FileSystemEventHandler):
                     existing_asset = self.db.get_asset_by_path(str(file_path))
                     
                     if not existing_asset:
-                        # Add new asset
+                        # Get smart folder metadata
+                        category, tags = self._get_folder_metadata(str(file_path), library_path)
+                        
+                        # Get file info
                         file_info = self._get_file_info(str(file_path))
                         if file_info:
+                            # Add new asset with smart folder metadata
                             asset_id = self.db.add_asset(
                                 file_path=str(file_path),
                                 name=file_info['name'],
-                                category=self._categorize_file(str(file_path)),
+                                category=category,
+                                tags=tags,
                                 file_size=file_info['size']
                             )
                             if asset_id:
                                 added_count += 1
+                                print(f"Added asset: {file_info['name']} (Category: {category}, Tags: {tags})")
             
             print(f"Library scan completed. Added {added_count} new assets.")
             return added_count
