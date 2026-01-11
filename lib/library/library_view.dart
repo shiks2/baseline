@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:sentio/constant.dart';
 import 'package:sentio/services/python_service.dart';
 import 'package:sentio/utilties/responsive.dart';
+import 'package:sentio/widgets/smart_asset_card.dart';
 
 class LibraryView extends StatefulWidget {
   const LibraryView({super.key});
@@ -282,7 +283,7 @@ class _LibraryViewState extends State<LibraryView> {
                       itemCount: _filteredAssets.length,
                       itemBuilder: (context, index) {
                         final asset = _filteredAssets[index];
-                        return _AssetCard(
+                        return SmartAssetCard(
                           asset: asset,
                           onCopyPath: () => _copyPathToClipboard(asset.path),
                           onOpen: () => _openAsset(asset.path),
@@ -294,119 +295,6 @@ class _LibraryViewState extends State<LibraryView> {
               ),
             ],
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AssetCard extends StatelessWidget {
-  final Asset asset;
-  final VoidCallback onCopyPath;
-  final VoidCallback onOpen;
-
-  const _AssetCard({
-    required this.asset,
-    required this.onCopyPath,
-    required this.onOpen,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: defaultElevation,
-      child: InkWell(
-        onTap: onOpen,
-        borderRadius: BorderRadius.circular(defaultBorderRadius),
-        child: Padding(
-          padding: EdgeInsets.all(defaultMargin),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      asset.name,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  PopupMenuButton<String>(
-                    icon: Icon(Icons.more_vert),
-                    onSelected: (value) {
-                      switch (value) {
-                        case 'open':
-                          onOpen();
-                          break;
-                        case 'copy':
-                          onCopyPath();
-                          break;
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: 'open',
-                        child: ListTile(
-                          leading: Icon(Icons.open_in_new),
-                          title: Text(OPEN_ASSET),
-                          dense: true,
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 'copy',
-                        child: ListTile(
-                          leading: Icon(Icons.content_copy),
-                          title: Text(COPY_PATH),
-                          dense: true,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              SizedBox(height: halfDefaultMargin),
-              Text(
-                '${ASSET_CATEGORY}: ${asset.category}',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              if (asset.tags.isNotEmpty) ...[
-                SizedBox(height: halfDefaultMargin),
-                Wrap(
-                  spacing: 4,
-                  children: asset.tags
-                      .take(3)
-                      .map(
-                        (tag) => Chip(
-                          label: Text(tag),
-                          padding: EdgeInsets.zero,
-                          materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.primaryContainer,
-                          labelStyle: TextStyle(fontSize: 10),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ],
-              Spacer(),
-              Text(
-                asset.path,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withOpacity(0.6),
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
         ),
       ),
     );

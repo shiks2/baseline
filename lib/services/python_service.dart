@@ -161,11 +161,15 @@ class Asset {
 
   factory Asset.fromJson(Map<String, dynamic> json) {
     return Asset(
-      id: json['id'] ?? 0,
-      name: json['name'] ?? '',
-      category: json['category'] ?? 'Uncategorized',
-      tags: List<String>.from(json['tags'] ?? []),
-      path: json['path'] ?? '',
+      id: json['id'] as int? ?? 0,
+      name: json['name'] as String? ?? '',
+      // Default to "Uncategorized" if null
+      category: json['category'] as String? ?? "Uncategorized",
+      // Safely parse the JSON list to a Dart List<String>
+      tags:
+          (json['tags'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
+          [],
+      path: json['path'] as String? ?? '',
     );
   }
 
