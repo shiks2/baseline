@@ -10,4 +10,8 @@ class Responsive {
     //print(MediaQuery.of(buildContext).size.width);
     return getDeviceWidth(buildContext) > MOBILE_DEVICE_WIDTH ? false : true;
   }
+
+  static bool isDesktop(BuildContext buildContext) {
+    return getDeviceWidth(buildContext) > 1200;
+  }
 }

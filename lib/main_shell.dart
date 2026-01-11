@@ -30,7 +30,7 @@ class _MainShellState extends State<MainShell> {
       final destination = _destinations[index];
       switch (destination) {
         case AppNavigationDestination.library:
-          context.go(DASHBOARD); // Temporarily map library to dashboard
+          context.go(LIBRARY_ROUTE);
           break;
         case AppNavigationDestination.assets:
           context.go(DASHBOARD); // Temporarily map assets to dashboard

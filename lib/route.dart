@@ -9,6 +9,7 @@ import 'package:sentio/profile/profile_view.dart';
 import 'package:sentio/profile/profile_settings_view.dart';
 import 'package:sentio/main_shell.dart';
 import 'package:sentio/indexer/indexer_view.dart';
+import 'package:sentio/library/library_view.dart';
 
 class AppGlobalRouter {
   static final rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -69,6 +70,13 @@ class AppGlobalRouter {
             name: INDEXER_ROUTE,
             parentNavigatorKey: shellNavigatorKey,
             builder: (context, state) => const IndexerView(),
+          ),
+          // Library route
+          GoRoute(
+            path: LIBRARY_ROUTE,
+            name: LIBRARY_ROUTE,
+            parentNavigatorKey: shellNavigatorKey,
+            builder: (context, state) => const LibraryView(),
           ),
           // Add more authenticated routes here
         ],

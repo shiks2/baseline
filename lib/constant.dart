@@ -140,3 +140,27 @@ const String INDEXING_IN_PROGRESS = 'Indexing in progress...';
 const String INDEXING_IDLE = 'Ready to index';
 const String FILES_INDEXED = 'files indexed';
 const String INDEXER_ROUTE = '/indexer';
+
+// Library Constants
+const String LIBRARY_ROUTE = '/library';
+const String LIBRARY = 'Library';
+const String SEARCH_ASSETS = 'Search Assets';
+const String SEARCH_PLACEHOLDER = 'Search for assets...';
+const String NO_RESULTS_FOUND = 'No results found';
+const String LOADING_ASSETS = 'Loading assets...';
+const String ERROR_LOADING_ASSETS = 'Error loading assets';
+const String RETRY = 'Retry';
+const String CLEAR_SEARCH = 'Clear';
+const String SEARCH_RESULTS = 'Search Results';
+const String ASSET_NAME = 'Name';
+const String ASSET_CATEGORY = 'Category';
+const String ASSET_TAGS = 'Tags';
+const String ASSET_PATH = 'Path';
+const String OPEN_ASSET = 'Open';
+const String COPY_PATH = 'Copy Path';
+const String VIEW_DETAILS = 'View Details';
+const String REFRESH_LIBRARY = 'Refresh';
+const String LIBRARY_REFRESHED = 'Library refreshed';
+const String PYTHON_NOT_AVAILABLE = 'Python not available';
+const String PYTHON_NOT_AVAILABLE_MESSAGE =
+    'Python is required for library functionality. Please install Python and try again.';
