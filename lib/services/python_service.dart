@@ -98,14 +98,16 @@ class PythonService {
     }
   }
 
-  /// Run the orchestrator to index a folder
-  Future<Stream<String>> indexFolder(String folderPath) async {
+  /// Run the orchestrator to scan a folder (non-blocking, returns stream)
+  Stream<Map<String, dynamic>> indexFolder(String folderPath) async* {
     try {
       final orchestratorPath = path.join(_backendPath, 'orchestrator.py');
 
       if (!File(orchestratorPath).existsSync()) {
         throw Exception('Python orchestrator not found: $orchestratorPath');
       }
+
+      debugPrint("📂 PythonService: Scanning folder $folderPath");
 
       final process = await Process.start(_pythonExecutable, [
         orchestratorPath,
@@ -114,12 +116,50 @@ class PythonService {
         folderPath,
       ], workingDirectory: _backendPath);
 
-      return process.stdout
-          .transform(utf8.decoder)
-          .transform(const LineSplitter());
+      // Read output line by line with debug logging
+      await for (final line
+          in process.stdout
+              .transform(utf8.decoder)
+              .transform(const LineSplitter())) {
+        debugPrint("🐍 Python Output: $line");
+        if (line.trim().isEmpty) continue;
+
+        try {
+          final jsonOutput = jsonDecode(line);
+          if (jsonOutput is Map<String, dynamic>) {
+            yield jsonOutput;
+          }
+        } catch (e) {
+          debugPrint("❌ JSON Parse Error: $e | Line: $line");
+        }
+      }
+
+      // Check stderr for crashes
+      final stderr = await process.stderr.transform(utf8.decoder).join();
+      if (stderr.isNotEmpty) {
+        debugPrint("❌ Python Error: $stderr");
+      }
     } catch (e) {
       debugPrint('Error running orchestrator index: $e');
-      return Stream.value('Error: $e');
+      yield {'event': 'error', 'message': e.toString()};
+    }
+  }
+
+  /// Start background watching for folders (fire and forget)
+  void startBackgroundWatcher(List<String> paths) {
+    for (final folderPath in paths) {
+      debugPrint("👀 Starting background watcher for: $folderPath");
+      try {
+        final orchestratorPath = path.join(_backendPath, 'orchestrator.py');
+        Process.start(
+          _pythonExecutable,
+          [orchestratorPath, 'index', 'watch', folderPath],
+          workingDirectory: _backendPath,
+          mode: ProcessStartMode.detached,
+        );
+      } catch (e) {
+        debugPrint('Error starting background watcher: $e');
+      }
     }
   }
 
@@ -130,6 +170,34 @@ class PythonService {
       return result.exitCode == 0;
     } catch (e) {
       return false;
+    }
+  }
+
+  /// Inject asset into AutoCAD
+  Future<void> injectAsset(String filePath) async {
+    try {
+      final orchestratorPath = path.join(_backendPath, 'orchestrator.py');
+
+      if (!File(orchestratorPath).existsSync()) {
+        throw Exception('Python orchestrator not found: $orchestratorPath');
+      }
+
+      debugPrint("💉 Injecting asset: $filePath");
+
+      final result = await Process.run(_pythonExecutable, [
+        orchestratorPath,
+        'inject',
+        filePath,
+      ], workingDirectory: _backendPath);
+
+      debugPrint("💉 Injection result: ${result.stdout}");
+
+      if (result.exitCode != 0) {
+        throw Exception('Python injector failed: ${result.stderr}');
+      }
+    } catch (e) {
+      debugPrint('Error running injector: $e');
+      rethrow;
     }
   }
 

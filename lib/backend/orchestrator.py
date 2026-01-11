@@ -17,6 +17,7 @@ from shared.config import config
 from services.librarian import LibrarianService
 from services.indexer import AssetWatcher
 from services.analyst import AssetAnalyst
+from services.injector import AssetInjector
 
 
 class AssetOrchestrator:
@@ -29,6 +30,7 @@ class AssetOrchestrator:
         self.librarian = LibrarianService()
         self.indexer = AssetWatcher()
         self.analyst = AssetAnalyst()
+        self.injector = AssetInjector()
         
         # Service status tracking
         self.service_status = {
@@ -315,6 +317,9 @@ def main():
     index_scan_parser = index_subparsers.add_parser('scan', help='Scan specific library')
     index_scan_parser.add_argument('path', help='Library path to scan')
     
+    index_watch_parser = index_subparsers.add_parser('watch', help='Watch specific library')
+    index_watch_parser.add_argument('path', help='Library path to watch')
+    
     # Analysis commands
     analysis_parser = subparsers.add_parser('analyze', help='Analysis operations')
     analysis_subparsers = analysis_parser.add_subparsers(dest='analysis_command')
@@ -324,6 +329,10 @@ def main():
     
     analysis_stop_parser = analysis_subparsers.add_parser('stop', help='Stop analysis')
     analysis_stats_parser = analysis_subparsers.add_parser('stats', help='Get analysis statistics')
+    
+    # Inject command
+    inject_parser = subparsers.add_parser('inject', help='Inject asset into AutoCAD')
+    inject_parser.add_argument('path', help='File path to inject')
     
     # System commands
     status_parser = subparsers.add_parser('status', help='Get system status')
@@ -360,6 +369,9 @@ def main():
             elif args.index_command == 'scan':
                 result = orchestrator.scan_library(args.path)
                 print(json.dumps(result, indent=2))
+            elif args.index_command == 'watch':
+                result = orchestrator.start_indexing([args.path])
+                print(json.dumps(result, indent=2))
             else:
                 index_parser.print_help()
                 
@@ -376,6 +388,10 @@ def main():
                 print(json.dumps(stats, indent=2))
             else:
                 analysis_parser.print_help()
+                
+        elif args.command == 'inject':
+            result = orchestrator.injector.inject(args.path)
+            print(json.dumps(result, indent=2))
         else:
             parser.print_help()
             

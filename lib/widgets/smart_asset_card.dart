@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sentio/asset/asset.dart';
 import 'package:sentio/constant.dart';
+import 'package:sentio/services/python_service.dart';
 
 /// Smart Asset Card that visualizes the intelligent metadata from the backend
 /// Shows category icons, colored badges, smart tags, and provides rich interactions
@@ -143,19 +144,42 @@ class SmartAssetCard extends StatelessWidget {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Inject Button (for future AutoCAD integration)
+                      // Inject Button (for AutoCAD integration)
                       IconButton(
                         icon: const Icon(Icons.add_circle_outline),
-                        onPressed: () {
-                          // TODO: Connect to Injector Service
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Injecting ${asset.name} into AutoCAD...',
+                        onPressed: () async {
+                          try {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Injecting ${asset.name} into AutoCAD...',
+                                ),
+                                duration: Duration(seconds: 2),
                               ),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
+                            );
+
+                            await PythonService.instance.injectAsset(
+                              asset.path,
+                            );
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Successfully injected ${asset.name} into AutoCAD',
+                                ),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Failed to inject ${asset.name}: $e',
+                                ),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
                         },
                         tooltip: 'Inject into AutoCAD',
                         color: Colors.blue,

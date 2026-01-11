@@ -91,31 +91,23 @@ class _IndexerViewState extends State<IndexerView> {
 
         try {
           // Call the Python backend to index the folder
-          final stream = await pythonService.indexFolder(folderPath);
+          final stream = pythonService.indexFolder(folderPath);
 
           // Listen to the stream for real-time updates
-          await for (final line in stream) {
+          await for (final data in stream) {
             if (!_isIndexing) break; // Check if indexing was stopped
 
-            try {
-              // Parse JSON output from Python
-              final data = jsonDecode(line);
-
-              // Handle different event types
-              if (data['event'] == 'added') {
-                setState(() {
-                  _indexedFilesCount++;
-                });
-              } else if (data['event'] == 'error') {
-                // Log error but continue indexing
-                debugPrint('Indexing error: ${data['message']}');
-              } else if (data['event'] == 'complete') {
-                // Folder indexing completed
-                debugPrint('Folder indexing completed: ${data['message']}');
-              }
-            } catch (e) {
-              // If it's not valid JSON, it might be a status message
-              debugPrint('Indexing status: $line');
+            // Handle different event types
+            if (data['event'] == 'added') {
+              setState(() {
+                _indexedFilesCount++;
+              });
+            } else if (data['event'] == 'error') {
+              // Log error but continue indexing
+              debugPrint('Indexing error: ${data['message']}');
+            } else if (data['event'] == 'complete') {
+              // Folder indexing completed
+              debugPrint('Folder indexing completed: ${data['message']}');
             }
           }
         } catch (e) {
