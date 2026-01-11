@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:file_selector/file_selector.dart';
@@ -6,6 +7,7 @@ import 'package:sentio/utilties/enum.dart';
 import 'package:sentio/utilties/utilities.dart';
 import 'package:sentio/widgets/primary_cta.dart';
 import 'package:sentio/widgets/secondary_cta.dart';
+import 'package:sentio/services/python_service.dart';
 
 class IndexerView extends StatefulWidget {
   const IndexerView({super.key});
@@ -75,23 +77,65 @@ class _IndexerViewState extends State<IndexerView> {
     UIHelpers.showSuccessSnackBar(context, INDEXING_STARTED);
 
     try {
-      // Simulate indexing process
-      for (int i = 0; i < 10; i++) {
-        await Future.delayed(const Duration(milliseconds: 500));
-        setState(() {
-          _indexedFilesCount = i + 1;
-        });
+      final pythonService = PythonService.instance;
+
+      // Check if Python is available
+      final isPythonAvailable = await pythonService.isPythonAvailable();
+      if (!isPythonAvailable) {
+        throw Exception('Python is not available on this system');
       }
 
-      setState(() {
-        _currentStatus = IndexerStatus.completed;
-        _isIndexing = false;
-      });
+      // Process each folder
+      for (final folderPath in _selectedFolders) {
+        if (!_isIndexing) break; // Check if indexing was stopped
 
-      UIHelpers.showSuccessSnackBar(
-        context,
-        '$INDEXING_COMPLETED - $_indexedFilesCount $FILES_INDEXED',
-      );
+        try {
+          // Call the Python backend to index the folder
+          final stream = await pythonService.indexFolder(folderPath);
+
+          // Listen to the stream for real-time updates
+          await for (final line in stream) {
+            if (!_isIndexing) break; // Check if indexing was stopped
+
+            try {
+              // Parse JSON output from Python
+              final data = jsonDecode(line);
+
+              // Handle different event types
+              if (data['event'] == 'added') {
+                setState(() {
+                  _indexedFilesCount++;
+                });
+              } else if (data['event'] == 'error') {
+                // Log error but continue indexing
+                debugPrint('Indexing error: ${data['message']}');
+              } else if (data['event'] == 'complete') {
+                // Folder indexing completed
+                debugPrint('Folder indexing completed: ${data['message']}');
+              }
+            } catch (e) {
+              // If it's not valid JSON, it might be a status message
+              debugPrint('Indexing status: $line');
+            }
+          }
+        } catch (e) {
+          debugPrint('Error indexing folder $folderPath: $e');
+          // Continue with next folder even if one fails
+        }
+      }
+
+      // Only mark as completed if indexing wasn't stopped
+      if (_isIndexing) {
+        setState(() {
+          _currentStatus = IndexerStatus.completed;
+          _isIndexing = false;
+        });
+
+        UIHelpers.showSuccessSnackBar(
+          context,
+          '$INDEXING_COMPLETED - $_indexedFilesCount $FILES_INDEXED',
+        );
+      }
     } catch (error) {
       setState(() {
         _currentStatus = IndexerStatus.failed;

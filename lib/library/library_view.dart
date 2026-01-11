@@ -5,6 +5,7 @@ import 'package:sentio/constant.dart';
 import 'package:sentio/services/python_service.dart';
 import 'package:sentio/utilties/responsive.dart';
 import 'package:sentio/widgets/smart_asset_card.dart';
+import 'package:sentio/asset/asset.dart';
 
 class LibraryView extends StatefulWidget {
   const LibraryView({super.key});

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sentio/services/python_service.dart';
+import 'package:sentio/asset/asset.dart';
 import 'package:sentio/constant.dart';
 
 /// Smart Asset Card that visualizes the intelligent metadata from the backend

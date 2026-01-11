@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
+import 'package:sentio/asset/asset.dart';
 
 /// Service class to handle communication with Python backend scripts
 class PythonService {
@@ -140,51 +141,5 @@ class PythonService {
       // In release mode, use the config-based path
       return path.join(Directory.current.path, 'imperium1.db');
     }
-  }
-}
-
-/// Asset model to represent indexed files
-class Asset {
-  final int id;
-  final String name;
-  final String category;
-  final List<String> tags;
-  final String path;
-
-  Asset({
-    required this.id,
-    required this.name,
-    required this.category,
-    required this.tags,
-    required this.path,
-  });
-
-  factory Asset.fromJson(Map<String, dynamic> json) {
-    return Asset(
-      id: json['id'] as int? ?? 0,
-      name: json['name'] as String? ?? '',
-      // Default to "Uncategorized" if null
-      category: json['category'] as String? ?? "Uncategorized",
-      // Safely parse the JSON list to a Dart List<String>
-      tags:
-          (json['tags'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
-          [],
-      path: json['path'] as String? ?? '',
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'category': category,
-      'tags': tags,
-      'path': path,
-    };
-  }
-
-  @override
-  String toString() {
-    return 'Asset(id: $id, name: $name, category: $category, tags: $tags, path: $path)';
   }
 }
